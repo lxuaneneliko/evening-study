@@ -4,7 +4,7 @@ Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光�
 
 ## 開始使用
 
-1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases) 下載 `EveningStudy-1.1.3-Windows.exe`，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。這是預發布修正版，包含銀河藍紫配色、全螢幕載入復原，以及 portable 重複開啟誤刪檔案的修正。本機 Smart App Control 仍阻擋這份未簽章的新版執行檔，尚未完成新版桌面操作驗證；需透過 Microsoft 審查或受信任的程式碼簽章處理。
+1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases/tag/v1.1.4) 下載 `EveningStudy-1.1.4-Windows.exe`，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。此版包含排版、不透明度、設定保存及開機啟動修正，並移除卡片底部裝飾文字。執行檔尚未簽章，以預發布形式提供；驗證範圍見 [VALIDATION.md](VALIDATION.md)。
 2. 預設顯示在主螢幕右側。拖曳「暮讀」標題或卡片頂端可移動；拖曳四邊或角落可直接調整大小，右下角有拖曳標記。尺寸和位置會自動記住。
 3. 按第二張卡片的「行程手帳」，查看一週安排。星期在左，各時段、住宿、電腦與衣物在上。
 4. 點選星期，再按鉛筆編輯安排。可以補上課本名稱、章節、習題目標與備註。
@@ -12,7 +12,7 @@ Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光�
 
 行程每週循環，依電腦本地日期與時間自動切換。預設排程含 **35 個安排：26 個定時安排、9 個未定時提醒**。「上課、通勤」等內容未提供時間，會保留為當日提醒；不會擅自排時間。書本名稱由使用者自行補上。
 
-2026-09-13 的實機黑畫面已確認是舊 portable 執行目錄缺少 66 個必要檔案。以完整原版 v1.1.0 還原並改為固定資料夾啟動後，全螢幕、計時、Spotify 與 Esc 已恢復，使用者亦確認正常。後續已單獨更新本機藍紫配色，並套用排版、透明度、設定保存與開機啟動修正；詳見 [診斷與修復紀錄](docs/BLACK-SCREEN-RECOVERY.md) 及 [本機修正紀錄](docs/LOCAL-FIXES.md)。目前 main 分支的後續修正尚未打包進 v1.1.3 附件。
+版本變更見 [CHANGELOG.md](CHANGELOG.md)。每次 portable 啟動使用獨立解壓目錄，避免重複開啟時誤刪仍在使用的程式資料。
 
 ## 桌面使用
 
