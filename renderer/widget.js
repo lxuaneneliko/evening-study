@@ -29,7 +29,7 @@ function render() {
       <div class="daily-belongings"><div class="small-section-title"><span>把生活也照顧好</span><span>TONIGHT</span></div><div class="logistic-line">${icon('home')}<span>今晚住 <strong>${esc(snap.today.lodging || '尚未安排')}</strong></span></div>${snap.today.computer ? `<div class="logistic-line">${icon('laptop')}<span>${esc(snap.today.computer)}</span></div>` : ''}${snap.today.clothes ? `<div class="logistic-line clothes-line">${icon('shirt')}<span>${esc(snap.today.clothes)}</span></div>` : ''}</div>
       ${snap.flexible.length ? `<button class="flexible-hint" data-action="week">${icon('calendar')}<span>今日提醒：${esc(snap.flexible.map(e => `${e.phase} ${e.title}`).join('；'))}</span>${icon('arrow')}</button>` : ''}
     </section>
-    <footer class="widget-footer"><span>每個此刻，都有自己的光。</span><span>今日 ${snap.done} / ${snap.total} ${icon('star')}</span></footer>`;
+    <footer class="widget-footer"><span>今日 ${snap.done} / ${snap.total} ${icon('star')}</span></footer>`;
   if (!document.getElementById('resize-edges').children.length) document.getElementById('resize-edges').innerHTML = ['n','s','e','w','ne','nw','se','sw'].map(direction => `<div class="resize-handle resize-${direction}" data-resize="${direction}" title="拖曳調整大小" aria-hidden="true">${direction === 'se' ? '<svg width="13" height="13" viewBox="0 0 13 13"><path d="M3 11 11 3M7 11l4-4" stroke="currentColor" stroke-width="1.2"/></svg>' : ''}</div>`).join('');
   updateClock();
 }
