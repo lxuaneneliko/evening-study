@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('planner', {
   exportSchedule: () => invoke('schedule:export'),
   complete: key => invoke('entry:complete', key),
   lockIn: () => invoke('lock:enter'),
+  lockReady: () => invoke('lock:ready'),
+  lockFailed: () => invoke('lock:failed'),
   unlock: () => invoke('lock:exit'),
   spotify: action => invoke('spotify:action', action),
   onUpdate: callback => { const listener = (_, state) => callback(state); ipcRenderer.on('state:update', listener); return () => ipcRenderer.removeListener('state:update', listener); },

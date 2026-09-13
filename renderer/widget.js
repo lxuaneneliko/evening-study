@@ -14,6 +14,7 @@ function render() {
       ${iconButton('pin', 'pin', appState.settings.pinned ? '取消置頂' : '保持在其他視窗上方', `aria-pressed="${appState.settings.pinned}"`)}
       ${iconButton('settings', 'settings', '開啟設定')}${iconButton('hide', 'hide', '隱藏卡片（系統匣可叫回）')}</div></header>
     <section class="night-card now-card" aria-label="現在要做什麼">
+      ${appState.lockedError ? `<p class="locked-error" role="alert">${esc(appState.lockedError)}</p>` : ''}
       <div class="card-topline drag"><span class="eyebrow">CHAPTER ${String(now.getDay() || 7).padStart(2, '0')} <span class="tiny-star">✦</span> 此刻</span><span class="short-date">${now.getMonth() + 1} 月 ${now.getDate()} 日・週${C.weekdays[now.getDay()]}</span></div>
       <div class="now-meta"><span class="status ${completed ? 'finished' : current ? 'active' : ''}"><i></i>${completed ? '這一項，完成了' : current ? '正在進行' : '自由安排'}</span><time id="live-clock" class="clock-time">${UI.time(now)}</time></div>
       <div class="hero-copy"><h1>${current ? esc(current.title) : '留一點空白<br>給自己'}</h1><div class="moon-orbit" aria-hidden="true"><div class="orbit-ring"></div>${icon('moon')}<span>✧</span><b>·</b></div></div>

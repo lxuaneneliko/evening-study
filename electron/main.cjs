@@ -5,6 +5,7 @@ const { pathToFileURL } = require('node:url');
 const Core = require('../shared/core');
 const defaultSchedule = require('../shared/default-schedule.json');
 const Spotify = require('./spotify.cjs');
+const { guardLockedWindow } = require('./locked-window.cjs');
 // Software compositing keeps transparent corners clean during live Windows resize.
 app.disableHardwareAcceleration();
 const isTest = process.env.EVENING_STUDY_TEST === '1';
@@ -15,7 +16,7 @@ app.setAppUserModelId('tw.local.eveningstudy');
 const rendererDir = path.join(__dirname, '../renderer');
 const defaults = { pinned: false, opacity: 94, notifications: true, reminderMinutes: 5, autoStart: false, width: 420, height: 774 };
 let state, widget, manager, tray, quitting = false, storePath, positionTimer;
-let lockedWindow, lockedSession = null, spotifyTimer, spotifyBusy = false;
+let lockedWindow, lockedSession = null, lockedGuard, lockedError = '', spotifyTimer, spotifyBusy = false;
 const noticeKeys = new Set();
 function initialState() { return { version: 1, schedule: structuredClone(defaultSchedule), settings: { ...defaults }, completions: {}, focus: null, position: null, previousSchedule: null, recovery: '' }; }
 function loadState() {
@@ -49,7 +50,7 @@ function persist() {
   }
   fs.renameSync(temp, storePath);
 }
-function publicState() { return { ...state, lockedSession, appVersion: app.getVersion(), canUndo: Boolean(state.previousSchedule), packaged: app.isPackaged, dataPath: storePath, displayCount: screen.getAllDisplays().length }; }
+function publicState() { return { ...state, lockedSession, lockedError, appVersion: app.getVersion(), canUndo: Boolean(state.previousSchedule), packaged: app.isPackaged, dataPath: storePath, displayCount: screen.getAllDisplays().length }; }
 function broadcast(save = true) {
   if (save) persist();
   for (const win of [widget, manager, lockedWindow]) if (win && !win.isDestroyed()) win.webContents.send('state:update', publicState());
@@ -114,29 +115,46 @@ async function spotifyAction(action, autoOpen = false) {
   } finally { spotifyBusy = false; }
 }
 function enterLockedIn() {
-  if (lockedWindow && !lockedWindow.isDestroyed()) { lockedWindow.show(); lockedWindow.focus(); return publicState(); }
+  if (lockedWindow && !lockedWindow.isDestroyed()) { lockedGuard?.focus(); return publicState(); }
+  lockedError = '';
   const current = Core.snapshot(state.schedule, state.completions).current;
   lockedSession = { startedAt: Date.now(), title: current?.title || '自由讀書', book: current?.book || '', notes: current?.notes || '', time: current ? `${current.start}–${current.end}` : '', spotify: { connecting: true, playing: false } };
   const display = screen.getDisplayMatching(widget.getBounds());
-  lockedWindow = new BrowserWindow({ ...display.bounds, fullscreen: true, fullscreenable: true, frame: false, backgroundColor: '#070d20', show: false, title: '暮讀 · LOCKED IN', autoHideMenuBar: true, icon: path.join(__dirname, '../assets/icon.png'), webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  lockedWindow = new BrowserWindow({ ...display.workArea, fullscreenable: true, frame: false, backgroundColor: '#070d20', show: false, title: '暮讀 · LOCKED IN', autoHideMenuBar: true, icon: path.join(__dirname, '../assets/icon.png'), webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   const focusWindow = lockedWindow;
-  secureWindow(lockedWindow);
-  // Let Windows finish leaving fullscreen before restoring the floating widget.
-  focusWindow.on('close', event => {
-    if (!quitting && focusWindow.isFullScreen()) {
-      event.preventDefault();
-      focusWindow.once('leave-full-screen', () => { if (!focusWindow.isDestroyed()) focusWindow.close(); });
-      focusWindow.setFullScreen(false);
+  const session = lockedSession;
+  secureWindow(focusWindow);
+  const guard = guardLockedWindow(focusWindow, {
+    isQuitting: () => quitting,
+    onVisible() {
+      if (lockedWindow !== focusWindow) return;
+      session.startedAt = Date.now();
+      widget.hide();
+      broadcast(false);
+      spotifyAction('play', true).catch(() => {
+        if (lockedSession === session) { session.spotify = { ok: false, code: 'MEDIA_UNAVAILABLE', playing: false }; broadcast(false); }
+      });
+      spotifyTimer = setInterval(() => { if (lockedSession === session) spotifyAction('status').catch(() => {}); }, 10000);
+    },
+    onFailure(code) {
+      if (lockedWindow !== focusWindow) return;
+      lockedError = `全螢幕未能顯示，已返回桌面卡片。請重試。（${code}）`;
+      try {
+        const log = path.join(app.getPath('userData'), 'diagnostics.log');
+        if (fs.existsSync(log) && fs.statSync(log).size > 256 * 1024) fs.renameSync(log, `${log}.previous`);
+        fs.appendFileSync(log, `${new Date().toISOString()} ${app.getVersion()} LOCKED_IN ${code}\n`);
+      } catch { /* Diagnostics must never prevent returning to the widget. */ }
+    },
+    onClosed() {
+      if (lockedWindow !== focusWindow) return;
+      lockedWindow = null; lockedGuard = null; lockedSession = null;
+      clearInterval(spotifyTimer);
+      if (!quitting && widget && !widget.isDestroyed()) { widget.show(); broadcast(false); }
     }
   });
-  lockedWindow.webContents.on('before-input-event', (event, input) => { if (input.type === 'keyDown' && input.key === 'Escape') { event.preventDefault(); lockedWindow.close(); } });
-  lockedWindow.loadFile(path.join(rendererDir, 'locked.html'));
-  lockedWindow.once('ready-to-show', () => { if (lockedWindow && !lockedWindow.isDestroyed()) { widget.hide(); lockedWindow.show(); lockedWindow.focus(); } });
-  lockedWindow.on('closed', () => { lockedWindow = null; lockedSession = null; clearInterval(spotifyTimer); if (!quitting) { widget.show(); broadcast(false); } });
-  spotifyAction('play', true).catch(() => {
-    if (lockedSession) { lockedSession.spotify = { ok: false, code: 'MEDIA_UNAVAILABLE', playing: false }; broadcast(false); }
-  });
-  spotifyTimer = setInterval(() => { if (lockedSession) spotifyAction('status').catch(() => {}); }, 10000);
+  lockedGuard = guard;
+  focusWindow.webContents.on('before-input-event', (event, input) => { if (input.type === 'keyDown' && input.key === 'Escape') { event.preventDefault(); focusWindow.close(); } });
+  focusWindow.loadFile(path.join(rendererDir, 'locked.html')).catch(() => guard.fail('LOAD_FAILED'));
   broadcast(false); return publicState();
 }
 function createWidget() {
@@ -193,15 +211,17 @@ function tick() {
   }
   if (noticeKeys.size > 1000) noticeKeys.clear();
 }
-function handle(channel, fn) {
+function handle(channel, fn, allowed = () => [widget, manager, lockedWindow]) {
   ipcMain.handle(channel, async (event, ...args) => {
     const sender = BrowserWindow.fromWebContents(event.sender);
-    if (![widget, manager, lockedWindow].includes(sender) || event.senderFrame !== event.sender.mainFrame || !event.senderFrame.url.startsWith(pathToFileURL(rendererDir + path.sep).href)) throw new Error('不允許的來源。');
+    if (!sender || !allowed().includes(sender) || event.senderFrame !== event.sender.mainFrame || !event.senderFrame.url.startsWith(pathToFileURL(rendererDir + path.sep).href)) throw new Error('不允許的來源。');
     return fn(...args);
   });
 }
 function registerHandlers() {
   handle('lock:enter', enterLockedIn);
+  handle('lock:ready', () => lockedGuard?.ready(), () => [lockedWindow]);
+  handle('lock:failed', () => lockedGuard?.fail('RENDER_FAILED'), () => [lockedWindow]);
   handle('lock:exit', () => { showWidget(); return publicState(); });
   handle('spotify:action', action => spotifyAction(action));
   handle('state:get', () => publicState());

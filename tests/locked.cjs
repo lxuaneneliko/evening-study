@@ -21,6 +21,11 @@ async function pageFor(app, file) { return app.windows().find(p => p.url().inclu
     assert.equal(await widget.getByRole('button', { name: '專注 25 分', exact: true }).count(), 0);
     await widget.locator('.locked-in-button').click();
     const focus = await pageFor(app, 'locked.html'); await focus.locator('#elapsed-time').waitFor();
+    // Content precedes the renderer handshake and native fullscreen transition.
+    for (let attempt = 0; attempt < 50; attempt++) {
+      if (await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => w.getTitle() === '暮讀 · LOCKED IN')?.isFullScreen())) break;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
     assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => w.getTitle() === '暮讀 · LOCKED IN').isFullScreen()), true);
     await focus.waitForFunction(() => lockedState?.lockedSession?.spotify?.playing === true, undefined, { timeout: 20000 });
     const playing = await focus.evaluate(() => window.planner.getState());

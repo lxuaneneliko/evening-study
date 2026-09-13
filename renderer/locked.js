@@ -1,11 +1,20 @@
 let lockedState;
+let readySent = false;
 const { escape: esc, icon } = UI;
 const spotifyIcon = '<svg class="icon spotify-mark" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="11"/><g fill="none" stroke="#101a36" stroke-linecap="round"><path d="M6 9c5-2 10-1 13 1" stroke-width="1.8"/><path d="M6.7 12.3c4-1.5 8-1 11 1" stroke-width="1.5"/><path d="M7.5 15.5c3-1 6-0.7 9 .8" stroke-width="1.3"/></g></svg>';
 function renderLocked() {
   const session = lockedState?.lockedSession;
-  if (!session) return;
+  if (!session) throw new Error('Missing focus session');
   document.getElementById('locked').innerHTML = `<div class="focus-constellation" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><span>✦</span><span>✧</span></div><header class="locked-header"><span class="wordmark">${icon('moon')} 暮讀 <span class="wordmark-en">AFTERGLOW</span></span><button class="exit-locked" data-action="exit">返回桌面 <kbd>Esc</kbd>${icon('close')}</button></header><section class="locked-center"><div class="locked-kicker"><span></span> LOCKED IN <span></span></div><h1>${esc(session.title)}</h1>${session.book ? `<p class="locked-book">${icon('book')} ${esc(session.book)}</p>` : ''}<div class="locked-clock-wrap"><span class="clock-orbit" aria-hidden="true"></span><time id="elapsed-time">00:00</time></div><p class="elapsed-label">已專注 <span>·</span> 一次，只做好一件事</p>${session.notes ? `<p class="locked-notes">${esc(session.notes)}</p>` : ''}</section><footer class="locked-footer"><div id="spotify-player"></div><div class="locked-verse"><span>每個此刻，都有自己的光。</span><span id="wall-time"></span></div></footer>`;
   renderSpotify(); updateTime();
+  if (!readySent) {
+    readySent = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (document.getElementById('elapsed-time')?.getBoundingClientRect().height > 0 && document.querySelector('.exit-locked')) {
+        window.planner.lockReady().catch(window.lockedFailure);
+      } else window.lockedFailure();
+    }));
+  }
 }
 function renderSpotify() {
   const media = lockedState?.lockedSession?.spotify || { connecting: true };
@@ -27,10 +36,10 @@ function updateTime() {
 }
 document.addEventListener('click', async event => {
   const button = event.target.closest('[data-action]'); if (!button) return;
+  if (button.dataset.action === 'exit') return; // Also works while bootstrapping.
   button.disabled = true;
   try {
-    if (button.dataset.action === 'exit') await window.planner.unlock();
-    else await window.planner.spotify(button.dataset.action);
+    await window.planner.spotify(button.dataset.action);
   } catch (error) { UI.toast(error.message, true); }
   finally { button.disabled = false; }
 });
@@ -38,5 +47,5 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') { event.preventDefault(); window.planner.unlock().catch(error => UI.toast(error.message, true)); }
 });
 window.planner.onUpdate(state => { const isNew = !lockedState || lockedState.lockedSession?.startedAt !== state.lockedSession?.startedAt; lockedState = state; if (isNew) renderLocked(); else { renderSpotify(); updateTime(); } });
-window.planner.getState().then(state => { lockedState = state; renderLocked(); }).catch(error => UI.toast(error.message, true));
+window.planner.getState().then(state => { lockedState = state; renderLocked(); }).catch(window.lockedFailure);
 setInterval(updateTime, 1000);

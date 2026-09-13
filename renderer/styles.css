@@ -36,3 +36,5 @@ dialog{background:#121e3e;color:var(--ink);padding:29px;border:1px solid #bca8ff
 .focus-constellation i{background:#d6eaffbb;box-shadow:0 0 8px #abcfff77}.focus-constellation>span{color:#cfb5ff88}.focus-constellation>span:last-child{color:#a6dbff66}
 .current-note{flex-shrink:0;min-height:1.7em}.now-card:has(.current-note) .book-line{margin-bottom:9px}
 @media(max-width:519px){.now-card:has(.current-note) .hero-copy{min-height:50px}}
+
+.locked-error{margin:0 0 12px;padding:10px 12px;border:1px solid #c2adff55;border-radius:8px;background:#292047;color:#eee7ff;font-size:12px;line-height:1.7;flex-shrink:0}

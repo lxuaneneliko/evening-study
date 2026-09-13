@@ -1,7 +1,7 @@
 {
   "name": "evening-study",
   "productName": "暮讀",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "暮讀 — 星空桌面行程與讀書小工具",
   "author": "Desktop Planner",
   "private": true,
@@ -14,7 +14,7 @@
   "scripts": {
     "setup:electron": "node scripts/setup-electron.cjs",
     "start": "electron .",
-    "test": "node --test tests/core.test.cjs tests/spotify.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/spotify.test.cjs tests/locked-window.test.cjs tests/locked-renderer.test.cjs",
     "test:e2e": "node tests/e2e.cjs && node tests/io-resize.cjs && node tests/locked.cjs",
     "pack": "electron-builder --win dir",
     "dist": "electron-builder --win portable"

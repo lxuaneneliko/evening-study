@@ -4,7 +4,7 @@ Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光�
 
 ## 開始使用
 
-1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases) 下載 `EveningStudy-1.1.1-Windows.exe`，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。此版本在開發電腦被 Windows Device Guard 阻擋啟動，尚未完成打包版的操作驗證；受管理的電腦需由管理員依組織規範審核應用程式。
+1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases) 下載 `EveningStudy-1.1.2-Windows.exe`，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。這是預發布修正版：尚未完成本機桌面操作驗證。前一版被開發電腦的 Windows Device Guard 簽章政策阻擋，這一版仍未簽章；須由管理員依政策審核或使用獲准的簽章流程，不能以關閉安全設定處理。
 2. 預設顯示在主螢幕右側。拖曳「暮讀」標題或卡片頂端可移動；拖曳四邊或角落可直接調整大小，右下角有拖曳標記。尺寸和位置會自動記住。
 3. 按第二張卡片的「行程手帳」，查看一週安排。星期在左，各時段、住宿、電腦與衣物在上。
 4. 點選星期，再按鉛筆編輯安排。可以補上課本名稱、章節、習題目標與備註。
@@ -17,6 +17,7 @@ Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光�
 - 第一張卡片：目前行程、課本、備註、剩餘時間，以及唯一的 **LOCKED IN** 按鈕。沒有定時行程時顯示空檔。
 - 點 **LOCKED IN** 進入所在螢幕的全螢幕專注畫面，開始累計專注時間，並續播 Spotify 目前選好的內容。畫面顯示歌曲名稱、歌手與播放狀態，可直接暫停／繼續。
 - 按 **Esc** 或右上角「返回桌面」退出全螢幕，回復原本卡片尺寸與位置。音樂會繼續播放；可在退出前按 Spotify 暫停。
+- 全螢幕會先載入內容，再顯示視窗及啟動音樂。載入超過 10 秒、畫面程序中斷或切換失敗時，自動返回卡片並顯示原因。退出事件沒有回應時，1.5 秒後關閉專注視窗。若舊版卡住，可先按 Esc，或從系統匣選「顯示桌面卡片」。
 - Spotify 需在本機安裝、登入，且曾選好歌曲／歌單。若尚未準備好，會開啟 Spotify 並顯示設定提示，不會假裝已開始播放。選好內容後可重試。
 - 使用 Windows 系統媒體控制來續播，不需 Spotify 開發者帳號、API 金鑰或另外連接雲端服務。Spotify 的廣告與帳號播放限制仍依 Spotify 本身處理。
 - 第二張卡片：接下來兩項行程、今晚住宿、電腦移動、衣物提醒；未定時行程可從提醒連到手帳。
@@ -53,6 +54,8 @@ JSON 備份保留行程、書本、備註與生活安排，可直接重新匯入
 
 資料在 `%APPDATA%/EveningStudy/planner.json`，僅存本機，沒有帳號、雲端上傳或遠端內容。
 
+全螢幕失敗時會在同一資料夾寫入 `diagnostics.log`，只記錄時間、版本及錯誤代碼，不含行程、歌名或帳號；不會自動上傳。
+
 - 儲存採暫存檔後替換，另保留 `planner.json.bak`。
 - 檔案毀損時嘗試使用上一份備份，並在手帳提示。
 - 完成紀錄依「日期＋行程」保存，保留約 120 天；不會把本週打勾套到下週。
@@ -63,7 +66,7 @@ JSON 備份保留行程、書本、備註與生活安排，可直接重新匯入
 
 這是獨立 Electron 專案，不依賴上層的 Next.js／Android 專案，也沒有修改它們的原始檔。
 
-原始碼：[lxuaneneliko/evening-study](https://github.com/lxuaneneliko/evening-study)。此儲存庫目前為私人，需使用有存取權限的 GitHub 帳號登入才能查看及下載。版本變更見 [CHANGELOG.md](CHANGELOG.md)。
+原始碼：[lxuaneneliko/evening-study](https://github.com/lxuaneneliko/evening-study)。此儲存庫與發布附件皆為公開，可直接查看及下載。`package.json` 的 `private: true` 只防止誤發到 npm，不影響 GitHub 公開狀態。版本變更見 [CHANGELOG.md](CHANGELOG.md)。
 
 ```powershell
 npm.cmd install
@@ -72,11 +75,13 @@ npm.cmd test
 npm.cmd run test:e2e
 npm.cmd start
 npm.cmd run dist
+node tests/verify-package.cjs
 ```
 
 `setup:electron` 使用 Electron 官方檢核碼驗證發行檔，以 JavaScript 解壓，不需原生 ZIP 擴充模組。建議 Node.js 22.12 以上；此版本在 Windows 以 Node.js 26 驗證。
 
 - 核心測試：原始表格、格式、開始／結束邊界、跨日、跨週、完成日期、重疊、JSON 保存。
+- 全螢幕單元測試：內容與載入事件順序、首幀空畫面、載入逾時、預載失敗、渲染中斷、重複進入／退出、缺少 Spotify、Esc 退出逾時。這些測試使用視窗與 DOM 替身，不等於實際 Windows 操作驗證。
 - Electron 操作測試：兩張原生卡片、每週表格、CRUD、教材備註、匯入預覽／套用／復原、置頂、尺寸、LOCKED IN 全螢幕與 Esc 回復、Spotify 狀態及重啟保存。
 - `node tests/locked.cjs --real-spotify` 會以本機 Spotify 實際驗證播放／暫停／續播。執行前需已有可控制的 Spotify 工作階段；若測試前為暫停，測試結束後會恢復暫停。
 - 測試使用獨立暫存資料，不更動實際使用者排程；截圖在 `test-results/`。
