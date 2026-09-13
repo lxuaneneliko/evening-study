@@ -17,7 +17,7 @@ const env = { ...process.env, EVENING_STUDY_TEST: '1', EVENING_STUDY_DATA: dataD
     const widget = app.windows().find(p => p.url().includes('widget.html')) || await app.waitForEvent('window', { predicate: p => p.url().includes('widget.html') });
     await widget.locator('.next-card').waitFor();
     const result = await app.evaluate(({ app, BrowserWindow, screen }) => ({ packaged: app.isPackaged, version: app.getVersion(), bounds: BrowserWindow.getAllWindows().find(w => w.getTitle().includes('桌面行程')).getBounds(), workArea: screen.getPrimaryDisplay().workArea }));
-    assert.equal(result.packaged, true); assert.equal(result.version, '1.1.0');
+    assert.equal(result.packaged, true); assert.equal(result.version, '1.1.1');
     const state = await widget.evaluate(() => window.planner.getState());
     assert.equal(state.schedule.days.flatMap(d => d.entries).length, 35);
     assert.equal(await widget.locator('[data-resize]').count(), 8);
@@ -27,7 +27,9 @@ const env = { ...process.env, EVENING_STUDY_TEST: '1', EVENING_STUDY_DATA: dataD
     const focus = app.windows().find(p => p.url().includes('locked.html')) || await app.waitForEvent('window', { predicate: p => p.url().includes('locked.html') });
     await focus.waitForFunction(() => lockedState?.lockedSession?.spotify?.playing === true);
     assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => w.getTitle() === '暮讀 · LOCKED IN').isFullScreen()), true);
-    await focus.keyboard.press('Escape');
+    await focus.keyboard.press('Escape').catch(error => {
+      if (!focus.isClosed() || !/Target page, context or browser has been closed/.test(error.message)) throw error;
+    });
     await widget.waitForFunction(() => !appState.lockedSession);
     await widget.screenshot({ path: path.join(root, 'test-results/packaged-widget.png'), omitBackground: true });
     fs.writeFileSync(path.join(root, 'test-results/packaged-report.json'), JSON.stringify({ ...result, verifiedFiles: files, archiveSha256: hash(fs.readFileSync(archive)), passed: true }, null, 2));

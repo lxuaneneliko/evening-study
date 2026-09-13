@@ -118,7 +118,7 @@ function enterLockedIn() {
   const current = Core.snapshot(state.schedule, state.completions).current;
   lockedSession = { startedAt: Date.now(), title: current?.title || '自由讀書', book: current?.book || '', notes: current?.notes || '', time: current ? `${current.start}–${current.end}` : '', spotify: { connecting: true, playing: false } };
   const display = screen.getDisplayMatching(widget.getBounds());
-  lockedWindow = new BrowserWindow({ ...display.bounds, fullscreen: true, fullscreenable: true, frame: false, backgroundColor: '#111a1f', show: false, title: '暮讀 · LOCKED IN', autoHideMenuBar: true, icon: path.join(__dirname, '../assets/icon.png'), webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
+  lockedWindow = new BrowserWindow({ ...display.bounds, fullscreen: true, fullscreenable: true, frame: false, backgroundColor: '#070d20', show: false, title: '暮讀 · LOCKED IN', autoHideMenuBar: true, icon: path.join(__dirname, '../assets/icon.png'), webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false } });
   const focusWindow = lockedWindow;
   secureWindow(lockedWindow);
   // Let Windows finish leaving fullscreen before restoring the floating widget.
@@ -154,7 +154,7 @@ function openManager(view = 'week') {
   if (!['week', 'import', 'settings'].includes(view)) view = 'week';
   if (manager && !manager.isDestroyed()) { manager.show(); manager.focus(); manager.webContents.send('manager:navigate', view); return; }
   const area = screen.getPrimaryDisplay().workArea;
-  manager = new BrowserWindow({ width: Math.min(1220, area.width - 48), height: Math.min(900, area.height - 48), minWidth: Math.min(860, area.width - 48), minHeight: Math.min(640, area.height - 48), title: '暮讀 · 行程手帳', backgroundColor: '#181d22', autoHideMenuBar: true, icon: path.join(__dirname, '../assets/icon.png'), show: false, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+  manager = new BrowserWindow({ width: Math.min(1220, area.width - 48), height: Math.min(900, area.height - 48), minWidth: Math.min(860, area.width - 48), minHeight: Math.min(640, area.height - 48), title: '暮讀 · 行程手帳', backgroundColor: '#080f24', autoHideMenuBar: true, icon: path.join(__dirname, '../assets/icon.png'), show: false, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
   secureWindow(manager);
   manager.loadFile(path.join(rendererDir, 'manager.html'), { query: { view } });
   manager.once('ready-to-show', () => manager.show());

@@ -1,10 +1,10 @@
 # 暮讀 · AFTERGLOW
 
-Windows 桌面行程 App。深墨色半透明卡片、暖白字與月亮細節，放在桌面右側，顯示「此刻」與「接著」。已內建提供的每週讀書與基隆／土城生活行程。
+Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光，放在桌面右側，顯示「此刻」與「接著」。已內建提供的每週讀書與基隆／土城生活行程。
 
 ## 開始使用
 
-1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases/latest) 下載 `EveningStudy-1.1.0-Windows.exe`，直接開啟即可，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。
+1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases/latest) 下載 `EveningStudy-1.1.1-Windows.exe`，直接開啟即可，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。
 2. 預設顯示在主螢幕右側。拖曳「暮讀」標題或卡片頂端可移動；拖曳四邊或角落可直接調整大小，右下角有拖曳標記。尺寸和位置會自動記住。
 3. 按第二張卡片的「行程手帳」，查看一週安排。星期在左，各時段、住宿、電腦與衣物在上。
 4. 點選星期，再按鉛筆編輯安排。可以補上課本名稱、章節、習題目標與備註。

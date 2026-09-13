@@ -1,6 +1,6 @@
 let lockedState;
 const { escape: esc, icon } = UI;
-const spotifyIcon = '<svg class="icon spotify-mark" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="11"/><g fill="none" stroke="#132019" stroke-linecap="round"><path d="M6 9c5-2 10-1 13 1" stroke-width="1.8"/><path d="M6.7 12.3c4-1.5 8-1 11 1" stroke-width="1.5"/><path d="M7.5 15.5c3-1 6-0.7 9 .8" stroke-width="1.3"/></g></svg>';
+const spotifyIcon = '<svg class="icon spotify-mark" width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="11"/><g fill="none" stroke="#101a36" stroke-linecap="round"><path d="M6 9c5-2 10-1 13 1" stroke-width="1.8"/><path d="M6.7 12.3c4-1.5 8-1 11 1" stroke-width="1.5"/><path d="M7.5 15.5c3-1 6-0.7 9 .8" stroke-width="1.3"/></g></svg>';
 function renderLocked() {
   const session = lockedState?.lockedSession;
   if (!session) return;

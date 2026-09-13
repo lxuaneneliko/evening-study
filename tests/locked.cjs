@@ -35,7 +35,10 @@ async function pageFor(app, file) { return app.windows().find(p => p.url().inclu
     await focus.getByRole('button', { name: '播放 Spotify', exact: true }).click();
     await focus.waitForFunction(() => lockedState?.lockedSession?.spotify?.playing === true);
     console.log('PASS elapsed timer advances; Spotify pause and resume report actual state');
-    await focus.keyboard.press('Escape');
+    await focus.keyboard.press('Escape').catch(error => {
+      // Native Escape may destroy the page before Playwright receives key-up.
+      if (!focus.isClosed() || !/Target page, context or browser has been closed/.test(error.message)) throw error;
+    });
     await widget.waitForFunction(() => !appState.lockedSession);
     const restoredBounds = await widget.evaluate(() => window.planner.resizeStart());
     assert.deepEqual(restoredBounds, originalBounds);
