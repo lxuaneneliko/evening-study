@@ -1,0 +1,54 @@
+{
+  "name": "evening-study",
+  "productName": "暮讀",
+  "version": "1.1.0",
+  "description": "暮讀 — 星空桌面行程與讀書小工具",
+  "author": "Desktop Planner",
+  "private": true,
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
+  },
+  "main": "electron/main.cjs",
+  "scripts": {
+    "setup:electron": "node scripts/setup-electron.cjs",
+    "start": "electron .",
+    "test": "node --test tests/core.test.cjs tests/spotify.test.cjs",
+    "test:e2e": "node tests/e2e.cjs && node tests/io-resize.cjs && node tests/locked.cjs",
+    "pack": "electron-builder --win dir",
+    "dist": "electron-builder --win portable"
+  },
+  "dependencies": {
+    "exceljs": "4.4.0"
+  },
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3",
+    "extract-zip": "2.0.1",
+    "playwright": "1.63.0"
+  },
+  "build": {
+    "appId": "tw.local.eveningstudy",
+    "productName": "暮讀",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "shared/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.ico",
+      "signExecutable": false
+    },
+    "portable": {
+      "artifactName": "EveningStudy-${version}-Windows.exe"
+    }
+  }
+}

@@ -1,0 +1,377 @@
+{
+  "schemaVersion": 1,
+  "name": "我的每週行程",
+  "days": [
+    {
+      "day": 1,
+      "lodging": "基隆",
+      "computer": "留基隆",
+      "clothes": "使用 1 份換洗；髒衣集中",
+      "entries": [
+        {
+          "id": "d1-0",
+          "title": "工數",
+          "start": "08:00",
+          "end": "09:30",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d1-1",
+          "title": "工材",
+          "start": "16:20",
+          "end": "17:35",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d1-2",
+          "title": "奈米材料",
+          "start": "19:30",
+          "end": "20:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d1-3",
+          "title": "電路",
+          "start": "20:45",
+          "end": "21:45",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "lodging": "基隆",
+      "computer": "留基隆",
+      "clothes": "使用 1 份；收好週三帶回的髒衣",
+      "entries": [
+        {
+          "id": "d2-0",
+          "title": "熱力",
+          "start": "08:00",
+          "end": "09:15",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d2-1",
+          "title": "電路",
+          "start": "15:30",
+          "end": "17:00",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d2-2",
+          "title": "動力",
+          "start": "19:30",
+          "end": "20:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d2-3",
+          "title": "創業課考試準備",
+          "start": "20:45",
+          "end": "21:45",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "lodging": "土城",
+      "computer": "基隆→晚課→土城",
+      "clothes": "穿第 3 份；帶回累積髒衣",
+      "entries": [
+        {
+          "id": "d3-0",
+          "title": "上課",
+          "start": null,
+          "end": null,
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d3-1",
+          "title": "上課、通勤",
+          "start": null,
+          "end": null,
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d3-2",
+          "title": "創業課上課",
+          "start": null,
+          "end": null,
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d3-3",
+          "title": "下課回土城",
+          "start": null,
+          "end": null,
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "lodging": "基隆",
+      "computer": "土城→上課→基隆",
+      "clothes": "穿乾淨衣出門；另帶 1 份供週五換洗",
+      "entries": [
+        {
+          "id": "d4-0",
+          "title": "土城→海大",
+          "start": null,
+          "end": null,
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d4-1",
+          "title": "電路課",
+          "start": null,
+          "end": null,
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d4-2",
+          "title": "3D 列印課",
+          "start": null,
+          "end": null,
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d4-3",
+          "title": "3D 列印",
+          "start": "19:30",
+          "end": "20:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d4-4",
+          "title": "材料實習報告",
+          "start": "20:45",
+          "end": "21:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "lodging": "土城",
+      "computer": "基隆→北科→土城",
+      "clothes": "使用帶來的 1 份；帶回髒衣＋睡衣",
+      "entries": [
+        {
+          "id": "d5-0",
+          "title": "動力",
+          "start": "08:00",
+          "end": "08:50",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d5-1",
+          "title": "奈米材料課",
+          "start": null,
+          "end": null,
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d5-2",
+          "title": "回土城",
+          "start": null,
+          "end": null,
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d5-3",
+          "title": "奈米材料",
+          "start": "19:30",
+          "end": "20:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d5-4",
+          "title": "洗衣、整理",
+          "start": "20:45",
+          "end": "21:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "lodging": "土城",
+      "computer": "留土城",
+      "clothes": "洗、晾／烘衣；準備下週換洗",
+      "entries": [
+        {
+          "id": "d6-0",
+          "title": "工數",
+          "start": "09:00",
+          "end": "10:30",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d6-1",
+          "title": "電路",
+          "start": "10:45",
+          "end": "12:15",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d6-2",
+          "title": "動力",
+          "start": "14:00",
+          "end": "15:30",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d6-3",
+          "title": "材料實習報告",
+          "start": "15:45",
+          "end": "17:00",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d6-4",
+          "title": "3D 列印",
+          "start": "19:00",
+          "end": "20:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d6-5",
+          "title": "創業課報告",
+          "start": "20:45",
+          "end": "22:00",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "lodging": "基隆",
+      "computer": "土城→基隆",
+      "clothes": "帶 3 份換洗＋乾淨睡衣；土城預留週四穿著及週五換洗",
+      "entries": [
+        {
+          "id": "d7-0",
+          "title": "熱力",
+          "start": "09:00",
+          "end": "10:30",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d7-1",
+          "title": "工材",
+          "start": "10:45",
+          "end": "12:00",
+          "phase": "早上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d7-2",
+          "title": "奈米材料",
+          "start": "13:30",
+          "end": "14:30",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d7-3",
+          "title": "創業課考試準備",
+          "start": "14:45",
+          "end": "15:45",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d7-4",
+          "title": "工數",
+          "start": "16:00",
+          "end": "17:00",
+          "phase": "下午",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d7-5",
+          "title": "晚餐、整理行李、返回基隆",
+          "start": "17:00",
+          "end": "20:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        },
+        {
+          "id": "d7-6",
+          "title": "創業課報告",
+          "start": "20:30",
+          "end": "21:30",
+          "phase": "晚上",
+          "book": "",
+          "notes": ""
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules/
+release/
+test-results/
+*.log
+.env
+.env.*
+!.env.example
+.codex/
+*.bak
+*.tmp
+Thumbs.db
+.DS_Store

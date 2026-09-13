@@ -1,0 +1,61 @@
+const { _electron: electron } = require('playwright');
+const ExcelJS = require('exceljs');
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), path = require('node:path'), os = require('node:os');
+const root = path.resolve(__dirname, '..'), testData = fs.mkdtempSync(path.join(os.tmpdir(), 'evening-resize-'));
+const env = { ...process.env, EVENING_STUDY_TEST: '1', EVENING_STUDY_DATA: testData }; delete env.ELECTRON_RUN_AS_NODE;
+async function pageFor(app, filename) { return app.windows().find(p => p.url().includes(filename)) || app.waitForEvent('window', { predicate: p => p.url().includes(filename) }); }
+(async () => {
+  let app;
+  try {
+    const workbook = new ExcelJS.Workbook(), sheet = workbook.addWorksheet('行程');
+    sheet.addRow(['星期', '開始', '結束', '事項', '書本', '備註']); sheet.addRow(['一', 8 / 24, 9.5 / 24, 'Excel 讀書', '時間格式課本', '保留章節']);
+    sheet.getCell('B2').numFmt = 'hh:mm'; sheet.getCell('C2').numFmt = 'hh:mm';
+    const xlsx = path.join(testData, 'schedule.xlsx'); await workbook.xlsx.writeFile(xlsx);
+    app = await electron.launch({ args: [root, '--manager'], env });
+    const widget = await pageFor(app, 'widget.html'), manager = await pageFor(app, 'manager.html');
+    await widget.locator('.resize-se').waitFor(); await manager.locator('.week-table').waitFor();
+    const original = await widget.evaluate(() => window.planner.resizeStart());
+    const handle = await widget.locator('.resize-se').boundingBox();
+    await widget.mouse.move(handle.x + 12, handle.y + 12); await widget.mouse.down();
+    await widget.waitForFunction(() => Boolean(resizeDrag?.bounds));
+    await widget.mouse.move(handle.x + 12 - 64, handle.y + 12 - 94, { steps: 5 }); await widget.mouse.up();
+    await widget.waitForFunction(async () => (await window.planner.getState()).settings.width < 400);
+    const resized = await widget.evaluate(() => window.planner.getState());
+    assert.ok(resized.settings.width < original.width - 50); assert.ok(resized.settings.height < original.height - 70);
+    assert.equal(await widget.evaluate(() => document.querySelector('.next-card').getBoundingClientRect().bottom <= innerHeight), true);
+    await widget.screenshot({ path: path.join(root, 'test-results/widget-resized.png'), omitBackground: true });
+    console.log('PASS real pointer drag resizes native window; both cards fit');
+
+    await app.evaluate(({ dialog }, file) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] }); }, xlsx);
+    await manager.getByRole('button', { name: '匯入新行程', exact: true }).click();
+    await manager.getByRole('button', { name: '選擇行程檔案', exact: true }).click();
+    await manager.waitForFunction(() => document.querySelector('#import-preview')?.innerText.includes('已辨識') || document.querySelector('#toast')?.innerText.length);
+    assert.equal(await manager.locator('#toast.error.visible').count(), 0, await manager.locator('#toast').innerText());
+    await manager.getByRole('button', { name: '套用這份行程', exact: true }).waitFor();
+    assert.match(await manager.locator('#import-preview').innerText(), /08:00–09:30 Excel 讀書/);
+    await manager.getByRole('button', { name: '套用這份行程', exact: true }).click();
+    await manager.locator('.week-table').waitFor();
+    const exported = path.join(testData, 'export.json');
+    await app.evaluate(({ dialog }, file) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: file }); }, exported);
+    await manager.getByRole('button', { name: '備份行程', exact: true }).click();
+    await manager.waitForFunction(() => document.getElementById('toast').innerText.includes('已備份'));
+    const backup = JSON.parse(fs.readFileSync(exported, 'utf8'));
+    assert.equal(backup.days[0].entries[0].book, '時間格式課本'); assert.equal(backup.days[0].entries[0].notes, '保留章節');
+    await manager.getByRole('button', { name: '復原上一次行程修改', exact: true }).click();
+    console.log('PASS native Excel import handler reads numeric times; JSON export retains book/notes');
+    await app.close();
+    app = await electron.launch({ args: [root], env });
+    const reopened = await pageFor(app, 'widget.html'); await reopened.locator('.next-card').waitFor();
+    const restored = await reopened.evaluate(() => window.planner.getState());
+    assert.equal(restored.settings.width, resized.settings.width); assert.equal(restored.settings.height, resized.settings.height);
+    console.log('PASS dragged width and height persist after restart');
+    await app.close();
+    fs.writeFileSync(path.join(testData, 'planner.json'), '{ invalid');
+    app = await electron.launch({ args: [root], env });
+    const recoveredPage = await pageFor(app, 'widget.html'); await recoveredPage.locator('.next-card').waitFor();
+    assert.match((await recoveredPage.evaluate(() => window.planner.getState())).recovery, /備份復原/);
+    console.log('PASS corrupted state automatically recovers validated backup');
+    fs.writeFileSync(path.join(root, 'test-results/io-resize-report.json'), JSON.stringify({ passed: true, original, resized: { width: resized.settings.width, height: resized.settings.height }, testData }, null, 2));
+  } finally { if (app) await app.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });
