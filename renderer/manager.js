@@ -1,6 +1,8 @@
 const C = PlannerCore, { escape: esc, icon, iconButton } = UI;
 let appState, selectedDay = new Date().getDay() || 7, currentView = new URLSearchParams(location.search).get('view') || 'week';
 let pendingImport = null, importText = '', importFilename = '', importFormat = '', dialogType = '', editId = null;
+let opacitySaveTimer;
+async function saveOpacity(value) { appState = await window.planner.settings({ opacity: Number(value) }); }
 const viewLabels = { week: ['YOUR WEEK, UNFOLDED', '每週行程', '把讀書、上課和生活，放在剛剛好的位置。'], import: ['A FRESH PAGE', '匯入行程', '一份表格，就能開始。你的安排會在桌面上慢慢展開。'], settings: ['MAKE ROOM FOR YOURSELF', '桌面設定', '調成你喜歡的樣子，安靜地陪著你。'] };
 const selected = () => appState.schedule.days.find(d => d.day === selectedDay);
 function render() {
@@ -79,7 +81,12 @@ async function saveEntry(event) {
 document.addEventListener('submit', saveEntry);
 document.addEventListener('input', event => {
   if (event.target.id === 'import-text') { importText = event.target.value; pendingImport = null; importFormat = ''; renderImportPreview(); }
-  if (event.target.id === 'setting-opacity') document.getElementById('opacity-value').textContent = `${event.target.value}%`;
+  if (event.target.id === 'setting-opacity') {
+    const value = event.target.value;
+    document.getElementById('opacity-value').textContent = `${value}%`;
+    clearTimeout(opacitySaveTimer);
+    opacitySaveTimer = setTimeout(() => saveOpacity(value).catch(error => UI.toast(error.message, true)), 120);
+  }
 });
 document.addEventListener('change', async event => {
   const target = event.target;
@@ -87,7 +94,7 @@ document.addEventListener('change', async event => {
   if (target.id === 'entry-start' && target.value) document.getElementById('entry-phase').value = C.phaseFor(target.value);
   try {
     if (target.dataset.settingSelect) { appState = await window.planner.settings({ [target.dataset.settingSelect]: Number(target.value) }); UI.toast('設定已儲存'); }
-    if (target.id === 'setting-opacity') { appState = await window.planner.settings({ opacity: Number(target.value) }); UI.toast('透明度已更新'); }
+    if (target.id === 'setting-opacity') { clearTimeout(opacitySaveTimer); await saveOpacity(target.value); UI.toast('透明度已更新並儲存'); }
   } catch (error) { UI.toast(error.message, true); render(); }
 });
 document.addEventListener('click', async event => {
@@ -130,6 +137,11 @@ document.addEventListener('click', async event => {
   } catch (error) { UI.toast(error.message, true); }
   finally { button.disabled = false; }
 });
-window.planner.onUpdate(state => { appState = state; if (currentView !== 'import') render(); });
+window.planner.onUpdate(state => {
+  appState = state;
+  // Preserve the active slider while autosave or another window broadcasts state.
+  if (currentView === 'settings' && document.activeElement?.id === 'setting-opacity') return;
+  if (currentView !== 'import') render();
+});
 window.planner.onNavigate(navigate);
 window.planner.getState().then(state => { appState = state; render(); }).catch(error => UI.toast(error.message, true));

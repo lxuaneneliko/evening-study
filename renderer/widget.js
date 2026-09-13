@@ -78,4 +78,6 @@ async function finishResize() {
 }
 document.addEventListener('pointerup', () => finishResize().catch(error => UI.toast(error.message, true)));
 document.addEventListener('pointercancel', () => finishResize().catch(error => UI.toast(error.message, true)));
+document.addEventListener('lostpointercapture', () => finishResize().catch(error => UI.toast(error.message, true)));
+window.addEventListener('blur', () => finishResize().catch(error => UI.toast(error.message, true)));
 setInterval(() => { const minute = new Date().toISOString().slice(0, 16); if (minute !== lastMinute && !resizeDrag) { lastMinute = minute; render(); } else updateClock(); }, 1000);

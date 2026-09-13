@@ -38,3 +38,13 @@ dialog{background:#121e3e;color:var(--ink);padding:29px;border:1px solid #bca8ff
 @media(max-width:519px){.now-card:has(.current-note) .hero-copy{min-height:50px}}
 
 .locked-error{margin:0 0 12px;padding:10px 12px;border:1px solid #c2adff55;border-radius:8px;background:#292047;color:#eee7ff;font-size:12px;line-height:1.7;flex-shrink:0}
+
+/* Keep wrapped titles in normal flow; short windows scroll instead of overlapping. */
+.widget-body .now-card{flex:1 0 auto}
+.widget-body .next-card{flex:1.03 0 auto}
+.widget-body .now-card>*{flex-shrink:0}
+.widget-body .hero-copy{flex:0 0 auto;min-height:0}
+.widget-body .hero-copy h1{max-width:100%;padding-right:30px}
+.widget-body .book-line{margin-top:12px}
+/* Composite each entire card once so the button and card share the same opacity. */
+.widget-body .night-card{background-color:#08112c;opacity:var(--panel-opacity)}

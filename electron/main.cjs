@@ -41,6 +41,7 @@ function loadState() {
   }
 }
 function persist() {
+  clearTimeout(positionTimer);
   fs.mkdirSync(path.dirname(storePath), { recursive: true });
   const temp = `${storePath}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(state, null, 2), 'utf8');
@@ -49,6 +50,25 @@ function persist() {
     try { Core.validateSchedule(JSON.parse(fs.readFileSync(storePath, 'utf8')).schedule); fs.copyFileSync(storePath, `${storePath}.bak`); } catch { /* Preserve the last good backup. */ }
   }
   fs.renameSync(temp, storePath);
+}
+function rememberWidgetBounds() {
+  if (!widget || widget.isDestroyed()) return;
+  const { x, y, width, height } = widget.getBounds();
+  state.position = { x, y };
+  state.settings.width = width; state.settings.height = height;
+  clearTimeout(positionTimer);
+  positionTimer = setTimeout(persist, 150);
+}
+function flushWidgetState() { rememberWidgetBounds(); persist(); }
+function applyLoginItem(enabled) {
+  if (!app.isPackaged || isTest) throw new Error('請在正式版 App 中設定開機啟動。');
+  const executable = process.env.PORTABLE_EXECUTABLE_FILE || app.getPath('exe');
+  const options = { path: executable, args: [] };
+  app.setLoginItemSettings({ name: '暮讀', openAtLogin: enabled, ...options });
+  const actual = app.getLoginItemSettings(options);
+  if (actual.openAtLogin !== enabled || (enabled && actual.executableWillLaunchAtLogin === false)) {
+    throw new Error('Windows 未啟用暮讀的開機啟動，請確認 Windows 的啟動應用程式設定。');
+  }
 }
 function publicState() { return { ...state, lockedSession, lockedError, appVersion: app.getVersion(), canUndo: Boolean(state.previousSchedule), packaged: app.isPackaged, dataPath: storePath, displayCount: screen.getAllDisplays().length }; }
 function broadcast(save = true) {
@@ -163,10 +183,10 @@ function createWidget() {
   widget.loadFile(path.join(rendererDir, 'widget.html'));
   widget.once('ready-to-show', () => widget.showInactive());
   widget.on('close', event => { if (!quitting) { event.preventDefault(); widget.hide(); } });
-  widget.on('moved', () => {
-    clearTimeout(positionTimer);
-    positionTimer = setTimeout(() => { if (!widget.isDestroyed()) { const { x, y } = widget.getBounds(); state.position = { x, y }; persist(); } }, 300);
-  });
+  widget.on('moved', rememberWidgetBounds);
+  widget.on('resize', rememberWidgetBounds);
+  widget.on('query-session-end', flushWidgetState);
+  widget.on('session-end', flushWidgetState);
 }
 function openManager(view = 'week') {
   if (!['week', 'import', 'settings'].includes(view)) view = 'week';
@@ -238,18 +258,13 @@ function registerHandlers() {
     const x = Math.round(Math.max(area.x, Math.min(requested.x, area.x + area.width - width)));
     const y = Math.round(Math.max(area.y, Math.min(requested.y, area.y + area.height - height)));
     widget.setBounds({ x, y, width, height });
-    state.settings.width = width; state.settings.height = height; state.position = { x, y };
+    rememberWidgetBounds();
     if (finish) broadcast();
     return widget.getBounds();
   });
   handle('settings:save', input => {
     const settings = validSettings({ ...state.settings, ...input });
-    if (settings.autoStart !== state.settings.autoStart) {
-      if (!app.isPackaged || isTest) throw new Error('請在正式版 App 中設定開機啟動。');
-      const executable = process.env.PORTABLE_EXECUTABLE_FILE || app.getPath('exe');
-      app.setLoginItemSettings({ openAtLogin: settings.autoStart, path: executable });
-      if (app.getLoginItemSettings({ path: executable }).openAtLogin !== settings.autoStart) throw new Error('Windows 未套用開機啟動設定，請稍後重試。');
-    }
+    if (Object.hasOwn(input, 'autoStart')) applyLoginItem(settings.autoStart);
     state.settings = settings; widget.setAlwaysOnTop(settings.pinned); widget.setBounds(widgetBounds()); return broadcast();
   });
   handle('schedule:save', input => {
@@ -306,6 +321,10 @@ else {
   app.on('second-instance', showWidget);
   app.whenReady().then(() => {
     storePath = path.join(app.getPath('userData'), 'planner.json'); state = loadState();
+    if (state.settings.autoStart && app.isPackaged && !isTest) {
+      try { applyLoginItem(true); }
+      catch (error) { state.recovery = [state.recovery, error.message].filter(Boolean).join('\n'); }
+    }
     registerHandlers(); createWidget();
     const icon = nativeImage.createFromPath(path.join(__dirname, '../assets/icon.png'));
     tray = new Tray(icon.resize({ width: 32, height: 32 })); tray.setToolTip('暮讀 · 讓每個此刻，有個方向');
@@ -318,6 +337,6 @@ else {
     if (process.argv.includes('--manager')) openManager('week');
   }).catch(error => { dialog.showErrorBox('暮讀無法啟動', String(error.message || error)); app.quit(); });
   app.on('window-all-closed', () => {});
-  app.on('before-quit', () => { quitting = true; clearTimeout(positionTimer); if (state) persist(); });
+  app.on('before-quit', () => { quitting = true; if (state) flushWidgetState(); });
   app.on('will-quit', () => globalShortcut.unregisterAll());
 }

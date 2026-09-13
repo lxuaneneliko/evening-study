@@ -14,7 +14,8 @@
   "scripts": {
     "setup:electron": "node scripts/setup-electron.cjs",
     "start": "electron .",
-    "test": "node --test tests/core.test.cjs tests/spotify.test.cjs tests/locked-window.test.cjs tests/locked-renderer.test.cjs",
+    "test": "node --test tests/core.test.cjs tests/spotify.test.cjs tests/locked-window.test.cjs tests/locked-renderer.test.cjs tests/preferences.test.cjs",
+    "test:layout": "node tests/widget-layout.cjs",
     "test:e2e": "node tests/e2e.cjs && node tests/io-resize.cjs && node tests/locked.cjs",
     "pack": "electron-builder --win dir",
     "dist": "node scripts/build-portable.cjs"
