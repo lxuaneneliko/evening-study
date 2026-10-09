@@ -8,5 +8,8 @@ test-results/
 .codex/
 *.bak
 *.tmp
+*.pfx
+*.p12
+*.key
 Thumbs.db
 .DS_Store

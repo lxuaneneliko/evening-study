@@ -4,7 +4,7 @@ Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光�
 
 ## 開始使用
 
-1. 從 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases/tag/v1.1.4) 下載 `EveningStudy-1.1.4-Windows.exe`，不需安裝 Node.js。執行檔可單獨移動；自行建置的 `release/win-unpacked/暮讀.exe` 則須保留整個資料夾。此版包含排版、不透明度、設定保存及開機啟動修正，並移除卡片底部裝飾文字。執行檔尚未簽章，以預發布形式提供；驗證範圍見 [VALIDATION.md](VALIDATION.md)。
+1. 發行檔列於 [GitHub Releases](https://github.com/lxuaneneliko/evening-study/releases)。目前尚無已完成簽章驗證的正式 Windows 版本；舊的未簽章預發布可能被 Smart App Control 阻擋。v1.1.5 的正式發布正在等待簽章，現階段的重建只完成未簽章封裝檢查，見 [SIGNING.md](SIGNING.md) 與 [VALIDATION.md](VALIDATION.md)。正式 portable 執行檔不需另裝 Node.js；`win-unpacked` 則須保留整個資料夾。
 2. 預設顯示在主螢幕右側。拖曳「暮讀」標題或卡片頂端可移動；拖曳四邊或角落可直接調整大小，右下角有拖曳標記。尺寸和位置會自動記住。
 3. 按第二張卡片的「行程手帳」，查看一週安排。星期在左，各時段、住宿、電腦與衣物在上。
 4. 點選星期，再按鉛筆編輯安排。可以補上課本名稱、章節、習題目標與備註。
@@ -26,7 +26,7 @@ Windows 桌面行程 App。深夜藍半透明卡片、冰藍與淡紫色星光�
 - 預設不置頂，其他 App 可覆蓋卡片。按圖釘可保持在其他視窗上方。這是浮動視窗，不會改寫桌布或移動桌面圖示。
 - 上方減號隱藏卡片；Windows 系統匣的月亮圖示可叫回。右鍵選單可完全結束 App。
 - `Ctrl + Shift + Space` 切換顯示／隱藏（若其他程式占用快捷鍵，請使用系統匣）。
-- 設定內可調尺寸、不透明度、通知、提前提醒與開機啟動。開機啟動預設關閉，正式版可以自行開啟；請保持執行檔位置固定。
+- 設定內可調尺寸、不透明度、通知、提前提醒與開機啟動。開機啟動預設關閉，打包版本可以自行開啟；請保持執行檔位置固定。App 啟動時讀取 Windows 實際狀態，不會自動恢復被停用或移除的啟動項目；移動到新版檔案後需自行重新開啟此設定。
 - 桌面通知需 Windows 允許通知；專注模式等系統設定可能影響彈出。App 不會更動系統通知或安全設定。
 - 不同螢幕／縮放設定會自動限制視窗範圍。找不到卡片時，可從系統匣選「移回主螢幕右側」。
 
@@ -68,7 +68,7 @@ JSON 備份保留行程、書本、備註與生活安排，可直接重新匯入
 
 這是獨立 Electron 專案，不依賴上層的 Next.js／Android 專案，也沒有修改它們的原始檔。
 
-原始碼：[lxuaneneliko/evening-study](https://github.com/lxuaneneliko/evening-study)。此儲存庫與發布附件皆為公開，可直接查看及下載。`package.json` 的 `private: true` 只防止誤發到 npm，不影響 GitHub 公開狀態。版本變更見 [CHANGELOG.md](CHANGELOG.md)。
+原始碼：[lxuaneneliko/evening-study](https://github.com/lxuaneneliko/evening-study)。此儲存庫為公開，已發布的附件可直接下載，草稿附件不對外提供。`package.json` 的 `private: true` 只防止誤發到 npm，不影響 GitHub 公開狀態。版本變更見 [CHANGELOG.md](CHANGELOG.md)。
 
 ```powershell
 npm.cmd install
@@ -88,7 +88,7 @@ node tests/verify-package.cjs
 - `node tests/locked.cjs --real-spotify` 會以本機 Spotify 實際驗證播放／暫停／續播。執行前需已有可控制的 Spotify 工作階段；若測試前為暫停，測試結束後會恢復暫停。
 - 測試使用獨立暫存資料，不更動實際使用者排程；截圖在 `test-results/`。
 - 渲染程序使用 sandbox、context isolation、CSP 與最小 IPC；匯入文字只作資料，不能執行指令或 HTML。
-- 目前執行檔未申請開發者簽章；沒有自動更新服務。
+- 正式建置需設定受信任的簽章憑證，見 [SIGNING.md](SIGNING.md)。目前尚未取得憑證；沒有自動更新服務。
 
 Electron 桌面功能依 [BrowserWindow 官方文件](https://www.electronjs.org/docs/latest/api/browser-window)、[Tray 官方文件](https://www.electronjs.org/docs/latest/api/tray) 與 [app 官方文件](https://www.electronjs.org/docs/latest/api/app) 實作。
 

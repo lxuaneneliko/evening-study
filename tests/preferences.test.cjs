@@ -8,12 +8,25 @@ const { EventEmitter } = require('node:events');
 const root = path.resolve(process.env.PLANNER_TEST_ROOT || path.join(__dirname, '..'));
 const clone = value => JSON.parse(JSON.stringify(value));
 
-async function boot(directory, { rejectedLogin = false } = {}) {
-  const handlers = new Map(), windows = [], loginCalls = [], timers = new Set();
-  let login = false;
+async function boot(directory, { rejectedLogin = false, registry = new Map(), env = {} } = {}) {
+  const handlers = new Map(), windows = [], loginCalls = [], loginReads = [], timers = new Set();
+  let appId;
   const app = new EventEmitter();
   const paths = { appData: directory, exe: path.join(directory, 'installed', '暮讀.exe') };
-  Object.assign(app, { isPackaged: true, disableHardwareAcceleration() {}, setName() {}, setAppUserModelId() {}, setPath: (k, v) => paths[k] = v, getPath: k => paths[k], getVersion: () => 'test', requestSingleInstanceLock: () => true, whenReady: () => Promise.resolve(), quit() {}, setLoginItemSettings(options) { loginCalls.push(clone(options)); login = options.openAtLogin; }, getLoginItemSettings() { return { openAtLogin: login, executableWillLaunchAtLogin: login && !rejectedLogin }; } });
+  Object.assign(app, { isPackaged: true, disableHardwareAcceleration() {}, setName() {}, setAppUserModelId(id) { appId = id; }, setPath: (k, v) => paths[k] = v, getPath: k => paths[k], getVersion: () => 'test', requestSingleInstanceLock: () => true, whenReady: () => Promise.resolve(), quit() {},
+    setLoginItemSettings(options) {
+      loginCalls.push(clone(options));
+      if (options.openAtLogin) registry.set(options.name, { name: options.name, path: options.path, args: clone(options.args), scope: 'user', enabled: !rejectedLogin });
+      else registry.delete(options.name);
+    },
+    getLoginItemSettings(options) {
+      loginReads.push(clone(options));
+      // Electron 44 parses this as a command line; an unquoted space truncates the path.
+      const lookupPath = options.path.startsWith('"') ? options.path.slice(1, -1) : options.path.split(' ')[0];
+      const launchItems = [...registry.values()].filter(item => item.path.toLowerCase() === lookupPath.toLowerCase());
+      return { openAtLogin: launchItems.some(item => item.name === appId), executableWillLaunchAtLogin: launchItems.some(item => item.enabled), launchItems: clone(launchItems) };
+    }
+  });
   class Window extends EventEmitter {
     constructor(options) {
       super(); this.bounds = { x: options.x, y: options.y, width: options.width, height: options.height };
@@ -29,7 +42,7 @@ async function boot(directory, { rejectedLogin = false } = {}) {
   const screen = Object.assign(new EventEmitter(), { getPrimaryDisplay: () => display, getDisplayNearestPoint: () => display, getDisplayMatching: () => display, getAllDisplays: () => [display] });
   class Tray extends EventEmitter { setToolTip() {} setContextMenu() {} }
   const electron = { app, BrowserWindow: Window, ipcMain: { handle: (key, fn) => handlers.set(key, fn) }, screen, Tray, Menu: { buildFromTemplate: x => x }, nativeImage: { createFromPath: () => ({ resize() { return {}; } }) }, Notification: { isSupported: () => false }, dialog: { showErrorBox: (...args) => { throw new Error(args.join(' ')); } }, globalShortcut: { register() {}, unregisterAll() {} }, powerMonitor: new EventEmitter(), shell: {} };
-  const context = vm.createContext({ require: name => name === 'electron' ? electron : name.startsWith('.') ? require(path.resolve(root, 'electron', name)) : require(name), __dirname: path.join(root, 'electron'), process: { env: {}, argv: [] }, structuredClone, console, Date, setInterval() {}, clearInterval() {}, setTimeout(fn, delay) { const timer = setTimeout(() => { timers.delete(timer); fn(); }, delay); timers.add(timer); return timer; }, clearTimeout(timer) { clearTimeout(timer); timers.delete(timer); } });
+  const context = vm.createContext({ require: name => name === 'electron' ? electron : name.startsWith('.') ? require(path.resolve(root, 'electron', name)) : require(name), __dirname: path.join(root, 'electron'), process: { env, argv: [] }, structuredClone, console, Date, setInterval() {}, clearInterval() {}, setTimeout(fn, delay) { const timer = setTimeout(() => { timers.delete(timer); fn(); }, delay); timers.add(timer); return timer; }, clearTimeout(timer) { clearTimeout(timer); timers.delete(timer); } });
   vm.runInContext(fs.readFileSync(path.join(root, 'electron/main.cjs'), 'utf8'), context);
   await new Promise(resolve => setImmediate(resolve));
   const widget = windows[0];
@@ -37,7 +50,7 @@ async function boot(directory, { rejectedLogin = false } = {}) {
   Window.fromWebContents = sender => sender === widget.webContents ? widget : null;
   const { pathToFileURL } = require('node:url');
   widget.webContents.mainFrame = { url: pathToFileURL(path.join(root, 'renderer/widget.html')).href };
-  return { app, widget, loginCalls, paths, state: () => clone(vm.runInContext('publicState()', context)), saved: () => JSON.parse(fs.readFileSync(path.join(paths.userData, 'planner.json'))), invoke: (key, ...args) => handlers.get(key)({ sender: widget.webContents, senderFrame: widget.webContents.mainFrame }, ...args), dispose() { for (const timer of timers) clearTimeout(timer); } };
+  return { app, widget, loginCalls, loginReads, registry, paths, state: () => clone(vm.runInContext('publicState()', context)), saved: () => JSON.parse(fs.readFileSync(path.join(paths.userData, 'planner.json'))), invoke: (key, ...args) => handlers.get(key)({ sender: widget.webContents, senderFrame: widget.webContents.mainFrame }, ...args), dispose() { for (const timer of timers) clearTimeout(timer); } };
 }
 
 test('resize is saved without pointerup, then restored with all preferences on cold start', async t => {
@@ -63,19 +76,71 @@ test('Windows shutdown flushes pending bounds before debounce expires', async t 
   assert.deepEqual(instance.saved().position, { x: 80, y: 90 });
 });
 
-test('saved autostart repairs a missing launch entry using the current executable', async t => {
+test('custom-name startup entry is verified and restored without rewriting Windows settings', async t => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'planner-login-'));
   const first = await boot(directory); t.after(() => first.dispose());
   await first.invoke('settings:save', { autoStart: true });
   assert.equal(first.saved().settings.autoStart, true);
-  const second = await boot(directory); t.after(() => second.dispose());
-  assert.deepEqual(second.loginCalls, [{ name: '暮讀', openAtLogin: true, path: second.paths.exe, args: [] }]);
+  assert.deepEqual(first.loginCalls, [{ name: '暮讀', openAtLogin: true, path: first.paths.exe, args: [] }]);
+  const second = await boot(directory, { registry: first.registry }); t.after(() => second.dispose());
+  assert.deepEqual(second.loginCalls, []);
+  assert.equal(second.state().settings.autoStart, true);
+  assert.equal(second.state().recovery, '');
   await second.invoke('settings:save', { autoStart: false });
   assert.equal(second.saved().settings.autoStart, false);
 });
 
 test('a Windows-disabled launch entry is reported rather than saved as enabled', async t => {
   const instance = await boot(fs.mkdtempSync(path.join(os.tmpdir(), 'planner-login-disabled-')), { rejectedLogin: true }); t.after(() => instance.dispose());
-  await assert.rejects(instance.invoke('settings:save', { autoStart: true }), /Windows 未啟用/);
+  await assert.rejects(instance.invoke('settings:save', { autoStart: true }), /開機啟動項目已停用/);
   assert.equal(instance.state().settings.autoStart, false);
+});
+
+test('a missing or disabled entry is not recreated or re-enabled on ordinary launch', async t => {
+  for (const disabled of [false, true]) {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'planner-login-state-'));
+    const first = await boot(directory); t.after(() => first.dispose());
+    await first.invoke('settings:save', { autoStart: true });
+    if (disabled) first.registry.get('暮讀').enabled = false;
+    else first.registry.clear();
+    const second = await boot(directory, { registry: first.registry }); t.after(() => second.dispose());
+    assert.deepEqual(second.loginCalls, []);
+    assert.equal(second.state().settings.autoStart, false);
+    assert.match(second.state().recovery, disabled ? /已停用/ : /尚未登記/);
+  }
+});
+
+test('portable startup uses the durable launcher path and quotes spaces for verification', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'planner-login-spaces-'));
+  const launcher = path.join(directory, 'My Apps', 'EveningStudy.exe');
+  const instance = await boot(directory, { env: { PORTABLE_EXECUTABLE_FILE: launcher } }); t.after(() => instance.dispose());
+  await instance.invoke('settings:save', { autoStart: true });
+  assert.equal(instance.registry.get('暮讀').path, launcher);
+  assert.equal(instance.loginReads.at(-1).path, `"${launcher}"`);
+  assert.equal(instance.saved().settings.autoStart, true);
+});
+
+test('another enabled login item for the same executable cannot mask our disabled entry', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'planner-login-other-'));
+  const first = await boot(directory); t.after(() => first.dispose());
+  await first.invoke('settings:save', { autoStart: true });
+  const item = first.registry.get('暮讀');
+  first.registry.set('Other entry', { ...item, name: 'Other entry' });
+  item.enabled = false;
+  const second = await boot(directory, { registry: first.registry }); t.after(() => second.dispose());
+  assert.equal(second.state().settings.autoStart, false);
+  assert.deepEqual(second.loginCalls, []);
+  await second.invoke('settings:save', { autoStart: false });
+  assert.equal(first.registry.has('Other entry'), true);
+});
+
+test('obsolete startup errors are cleared without losing data recovery notices', async t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'planner-login-warning-'));
+  const first = await boot(directory); t.after(() => first.dispose());
+  await first.invoke('settings:save', { autoStart: true });
+  const saved = first.saved();
+  saved.recovery = '已使用上一份備份復原。\nWindows 未啟用暮讀的開機啟動，請確認 Windows 的啟動應用程式設定。';
+  fs.writeFileSync(path.join(first.paths.userData, 'planner.json'), JSON.stringify(saved));
+  const second = await boot(directory, { registry: first.registry }); t.after(() => second.dispose());
+  assert.equal(second.state().recovery, '已使用上一份備份復原。');
 });

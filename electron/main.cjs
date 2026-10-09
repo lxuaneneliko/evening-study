@@ -60,15 +60,38 @@ function rememberWidgetBounds() {
   positionTimer = setTimeout(persist, 150);
 }
 function flushWidgetState() { rememberWidgetBounds(); persist(); }
+const loginItemName = '暮讀';
+const loginWarnings = [
+  'Windows 未啟用暮讀的開機啟動，請確認 Windows 的啟動應用程式設定。',
+  '暮讀的開機啟動項目已停用。請在桌面設定或 Windows 的啟動應用程式設定中重新開啟。',
+  '目前這份 App 尚未登記開機啟動。請在桌面設定重新開啟「登入 Windows 時啟動」，並將 App 保存在固定位置。'
+];
+function loginExecutable() { return process.env.PORTABLE_EXECUTABLE_FILE || app.getPath('exe'); }
+function readLoginItem() {
+  // Electron's openAtLogin looks up the AppUserModelId, not our custom entry name.
+  // Its launchItems path lookup parses a command line, so quote paths with spaces.
+  const actual = app.getLoginItemSettings({ path: `"${loginExecutable()}"`, args: [] });
+  const item = actual.launchItems.find(item => item.name === loginItemName && item.scope === 'user' && item.args.length === 0);
+  return { registered: Boolean(item), enabled: item?.enabled === true };
+}
+function setLoginWarning(message = '') {
+  const other = (state.recovery || '').split('\n').filter(line => line && !loginWarnings.includes(line));
+  state.recovery = [...new Set([...other, message].filter(Boolean))].join('\n');
+}
+function refreshLoginItem() {
+  const requested = state.settings.autoStart;
+  const actual = readLoginItem();
+  state.settings.autoStart = actual.enabled;
+  setLoginWarning(actual.registered && !actual.enabled ? loginWarnings[1] : requested && !actual.enabled ? loginWarnings[2] : '');
+}
 function applyLoginItem(enabled) {
   if (!app.isPackaged || isTest) throw new Error('請在正式版 App 中設定開機啟動。');
-  const executable = process.env.PORTABLE_EXECUTABLE_FILE || app.getPath('exe');
-  const options = { path: executable, args: [] };
-  app.setLoginItemSettings({ name: '暮讀', openAtLogin: enabled, ...options });
-  const actual = app.getLoginItemSettings(options);
-  if (actual.openAtLogin !== enabled || (enabled && actual.executableWillLaunchAtLogin === false)) {
-    throw new Error('Windows 未啟用暮讀的開機啟動，請確認 Windows 的啟動應用程式設定。');
+  app.setLoginItemSettings({ name: loginItemName, openAtLogin: enabled, path: loginExecutable(), args: [] });
+  const actual = readLoginItem();
+  if (enabled ? !actual.enabled : actual.registered) {
+    throw new Error(enabled ? loginWarnings[1] : '無法移除暮讀的開機啟動項目，請在 Windows 的啟動應用程式設定中停用。');
   }
+  setLoginWarning();
 }
 function publicState() { return { ...state, lockedSession, lockedError, appVersion: app.getVersion(), canUndo: Boolean(state.previousSchedule), packaged: app.isPackaged, dataPath: storePath, displayCount: screen.getAllDisplays().length }; }
 function broadcast(save = true) {
@@ -321,9 +344,10 @@ else {
   app.on('second-instance', showWidget);
   app.whenReady().then(() => {
     storePath = path.join(app.getPath('userData'), 'planner.json'); state = loadState();
-    if (state.settings.autoStart && app.isPackaged && !isTest) {
-      try { applyLoginItem(true); }
-      catch (error) { state.recovery = [state.recovery, error.message].filter(Boolean).join('\n'); }
+    if (app.isPackaged && !isTest) {
+      // Read the real Windows state; never re-enable an entry on ordinary launch.
+      try { refreshLoginItem(); }
+      catch { setLoginWarning('無法讀取 Windows 的開機啟動狀態，請在 Windows 設定中確認。'); }
     }
     registerHandlers(); createWidget();
     const icon = nativeImage.createFromPath(path.join(__dirname, '../assets/icon.png'));
